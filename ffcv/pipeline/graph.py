@@ -249,6 +249,7 @@ class Graph:
         # Filling the default decoders
         for output_name, spec in pipeline_specs.items():
             if spec.source in self.handlers:
+                # print("spec.source -> ", spec.source)
                 field = self.handlers[spec.source]
                 Decoder = field.get_decoder_class()
                 spec.accept_decoder(Decoder, output_name)
@@ -329,7 +330,7 @@ class Graph:
 
                 next_state, allocation = operation.declare_state_and_memory(state)
                 state_allocation = operation.declare_shared_memory(state)
-
+                # print("operation,next_state.device.type ->",operation,next_state.device.type)
                 if next_state.device.type != 'cuda' and isinstance(operation,
                     ModuleWrapper):
                     msg = ("Using a pytorch transform on the CPU is extremely"
@@ -482,6 +483,7 @@ def {fun_name}(batch_indices, metadata, storage_state):
         op_to_node = {}
 
         for s_ix, stage in enumerate(stages):
+            # print("s_ix, stage ->", s_ix, stage)
             code_stages.append(self.codegen_stage(stage, s_ix, op_to_node, code, already_defined))
 
         final_output = [x.id for x in self.leaf_nodes.values()]

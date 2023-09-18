@@ -64,7 +64,7 @@ class Loader:
     os_cache : bool
         Leverages the operating for caching purposes. This is beneficial when there is enough memory to cache the dataset and/or when multiple processes on the same machine training using the same dataset. See https://docs.ffcv.io/performance_guide.html for more information.
     order : Union[OrderOption, TraversalOrder]
-        Traversal order, one of: SEQUENTIAL, RANDOM, QUASI_RANDOM, or a custom TraversalOrder
+        Traversal order, one of: SEQEUNTIAL, RANDOM, QUASI_RANDOM, or a custom TraversalOrder
 
         QUASI_RANDOM is a random order that tries to be as uniform as possible while minimizing the amount of data read from the disk. Note that it is mostly useful when `os_cache=False`. Currently unavailable in distributed mode.
     distributed : bool
@@ -138,6 +138,8 @@ class Loader:
         self.code = None
         self.recompile = recompile
 
+        # print("self.fname ->", self.fname)
+
         if self.num_workers < 1:
             self.num_workers = cpu_count()
 
@@ -145,6 +147,7 @@ class Loader:
 
         if indices is None:
             self.indices = np.arange(self.reader.num_samples, dtype='uint64')
+            # print("self.indices ->", self.indices )
         else:
             self.indices = np.array(indices)
 
@@ -187,6 +190,7 @@ class Loader:
 
         # Adding the default pipelines
         for f_ix, (field_name, field) in enumerate(self.reader.handlers.items()):
+            # print("f_ix, (field_name, field) ->", f_ix, field_name, field)
             self.field_name_to_f_ix[field_name] = f_ix
 
             if field_name not in custom_pipeline_specs:
@@ -203,6 +207,9 @@ class Loader:
             if field_name not in self.pipeline_specs:
                 self.pipeline_specs[field_name] = spec
 
+        # print("self.reader.handlers->", self.reader.handlers)
+        # print("self.reader.metadata ->", self.reader.metadata)
+        # print("self.pipeline_specs ->", self.pipeline_specs)
         self.graph = Graph(self.pipeline_specs, self.reader.handlers,
                            self.field_name_to_f_ix, self.reader.metadata,
                            memory_read)
@@ -274,5 +281,6 @@ class Loader:
     def generate_code(self):
         queries, code = self.graph.collect_requirements()
         self.code = self.graph.codegen_all(code)
+        # print("self.code ->", self.code)
         
 

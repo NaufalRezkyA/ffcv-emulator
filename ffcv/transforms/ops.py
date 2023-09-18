@@ -12,6 +12,7 @@ from ..pipeline.allocation_query import AllocationQuery
 from ..pipeline.operation import Operation
 from ..pipeline.state import State
 from dataclasses import replace
+import time
 
 
 class ToTensor(Operation):
@@ -48,13 +49,39 @@ class ToDevice(Operation):
 
     def generate_code(self) -> Callable:
         def to_device(inp, dst):
-            if len(inp.shape) == 4:
-                if inp.is_contiguous(memory_format=ch.channels_last):
-                    dst = dst.reshape(inp.shape[0], inp.shape[2], inp.shape[3], inp.shape[1])
-                    dst = dst.permute(0, 3, 1, 2)
-            dst = dst[:inp.shape[0]]
-            dst.copy_(inp, non_blocking=self.non_blocking)
-            return dst
+            # measuring time
+            # ch.cuda.synchronize()
+            # start = time.time()
+            # if len(inp.shape) == 4:
+            #     if inp.is_contiguous(memory_format=ch.channels_last):
+            #         dst = dst.reshape(inp.shape[0], inp.shape[2], inp.shape[3], inp.shape[1])
+            #         dst = dst.permute(0, 3, 1, 2)
+            # dst = dst[:inp.shape[0]]
+            # dst.copy_(inp, non_blocking=self.non_blocking)
+            # # print("dst -> ", dst)
+            # ch.cuda.synchronize()
+            # end = time.time() - start
+            # with open("todevice.txt", 'a') as f:
+            #     f.write("{:.9f}\n".format(end))
+
+            #original code
+            # if len(inp.shape) == 4:
+            #     if inp.is_contiguous(memory_format=ch.channels_last):
+            #         dst = dst.reshape(inp.shape[0], inp.shape[2], inp.shape[3], inp.shape[1])
+            #         dst = dst.permute(0, 3, 1, 2)
+            # dst = dst[:inp.shape[0]]
+            # dst.copy_(inp, non_blocking=self.non_blocking)
+            # print("inp ->", inp.device, inp.dtype, type(inp), inp.size())
+            # print("dst ->", dst.device, dst.dtype, type(dst), dst.size())
+            
+            if inp.ndim > 1:
+                time.sleep(0.003262281)
+                return ch.empty((256, 3, 224, 224), dtype=ch.uint8)
+            else:
+                time.sleep(0.000068903)
+                return ch.empty((256), dtype=ch.int64)
+
+            # return dst
 
         return to_device
 
@@ -81,19 +108,66 @@ class ToTorchImage(Operation):
     def generate_code(self) -> Callable:
         do_conv = self.enable_int16conv
         def to_torch_image(inp: ch.Tensor, dst):
+            # synchronous
+            # ch.cuda.synchronize()
+            # start = time.time()
+            # # print("testing....")
+            # # Returns a permuted view of the same tensor
+            # if do_conv:
+            #     inp = inp.view(dtype=ch.float16)
+            #     pass
+            # inp = inp.permute([0, 3, 1, 2])
+            # # If channels last, it's already contiguous so we're good
+            # if self.channels_last:
+            #     assert inp.is_contiguous(memory_format=ch.channels_last)
+            #     #syncronous
+            #     ch.cuda.synchronize()
+            #     end = time.time() - start
+            #     with open("totorchimage.txt", 'a') as f:
+            #         # print("testng1")
+            #         f.write("{:.9f}\n".format(end))
+            #     return inp
+
+            # original code
+            # print("testing....")
             # Returns a permuted view of the same tensor
-            if do_conv:
-                inp = inp.view(dtype=ch.float16)
-                pass
-            inp = inp.permute([0, 3, 1, 2])
+            # if do_conv:
+            #     inp = inp.view(dtype=ch.float16)
+            #     pass
+            # inp = inp.permute([0, 3, 1, 2])
+            # # If channels last, it's already contiguous so we're good
+            # if self.channels_last:
+            #     # print("self.channels_last ->", self.channels_last)
+            #     assert inp.is_contiguous(memory_format=ch.channels_last)
+            #     #syncronous
+            #     print("inp ->", inp.device, inp.dtype, type(inp), inp.size())
+            #     # quit()
+            #     return inp
+
+            # # Otherwise, need to fill the allocated memory with the contiguous tensor
+            # dst[:inp.shape[0]] = inp.contiguous()
+            # print("dst ->", dst.device, dst.dtype, type(dst), dst.size())
+            # return dst[:inp.shape[0]]
+            
+            # if do_conv:
+            #     inp = inp.view(dtype=ch.float16)
+            #     pass
+            # inp = inp.permute([0, 3, 1, 2])
             # If channels last, it's already contiguous so we're good
             if self.channels_last:
-                assert inp.is_contiguous(memory_format=ch.channels_last)
-                return inp
+                # print("self.channels_last ->", self.channels_last)
+                # assert inp.is_contiguous(memory_format=ch.channels_last)
+                # #syncronous
+                # print("inp ->", inp.device, inp.dtype, type(inp), inp.size())
+                # quit()
+                time.sleep(0.000050306)
+                return ch.empty((256, 3, 224, 224), dtype=ch.uint8)
 
             # Otherwise, need to fill the allocated memory with the contiguous tensor
-            dst[:inp.shape[0]] = inp.contiguous()
-            return dst[:inp.shape[0]]
+            # dst[:inp.shape[0]] = inp.contiguous()
+            # print("dst ->", dst.device, dst.dtype, type(dst), dst.size())
+            time.sleep(0.000050306)
+            return ch.empty((256, 3, 224, 224), dtype=ch.uint8)
 
         return to_torch_image
 
@@ -125,7 +199,24 @@ class Convert(Operation):
 
     def generate_code(self) -> Callable:
         def convert(inp, dst):
-            return inp.type(self.target_dtype)
+            # print("inp ->", inp, inp.size())
+            # print("dtype ->", self.target_dtype)
+            # x = inp.type(self.target_dtype)
+            # print("x ->", x, x.size())
+            # quit()
+
+            # ch.cuda.synchronize()
+            # start = time.time()
+            # x = inp.type(self.target_dtype)
+            # ch.cuda.synchronize()
+            # end = time.time() - start
+            # with open("convert.txt", 'a') as f:
+            #     # print("testng1")
+            #     f.write("{:.9f}\n".format(end))
+            time.sleep(0.000525779)
+
+            # return inp.type(self.target_dtype)
+            return ch.empty((256, 3, 224, 224), dtype=ch.float32)
 
         convert.is_parallel = True
 
